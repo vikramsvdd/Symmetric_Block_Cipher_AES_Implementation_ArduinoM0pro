@@ -5,8 +5,6 @@ I have implemented AEC algorithm and tested out the encryption and decryption pr
 Reference:
 https://github.com/kokke/tiny-AES-c
  
- Attached below is the Encryption time, Decryption time and Total time taken (all in us): 
- 
-Results:
+
 
 
