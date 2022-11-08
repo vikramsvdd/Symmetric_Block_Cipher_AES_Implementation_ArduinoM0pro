@@ -220,6 +220,17 @@ void AES_init_ctx(struct AES_ctx* ctx, const uint8_t* key)
 {
   KeyExpansion(ctx->RoundKey, key);
 }
+#if (defined(CBC) && (CBC == 1)) || (defined(CTR) && (CTR == 1))
+void AES_init_ctx_iv(struct AES_ctx* ctx, const uint8_t* key, const uint8_t* iv)
+{
+  KeyExpansion(ctx->RoundKey, key);
+  memcpy (ctx->Iv, iv, AES_BLOCKLEN);
+}
+void AES_ctx_set_iv(struct AES_ctx* ctx, const uint8_t* iv)
+{
+  memcpy (ctx->Iv, iv, AES_BLOCKLEN);
+}
+#endif
 
 // This function adds the round key to state.
 // The round key is added to the state by an XOR function.
@@ -470,3 +481,91 @@ void AES_ECB_decrypt(const struct AES_ctx* ctx, uint8_t* buf)
 
 
 #endif // #if defined(ECB) && (ECB == 1)
+
+
+
+
+
+#if defined(CBC) && (CBC == 1)
+
+
+static void XorWithIv(uint8_t* buf, const uint8_t* Iv)
+{
+  uint8_t i;
+  for (i = 0; i < AES_BLOCKLEN; ++i) // The block in AES is always 128bit no matter the key size
+  {
+    buf[i] ^= Iv[i];
+  }
+}
+
+void AES_CBC_encrypt_buffer(struct AES_ctx *ctx, uint8_t* buf, size_t length)
+{
+  size_t i;
+  uint8_t *Iv = ctx->Iv;
+  for (i = 0; i < length; i += AES_BLOCKLEN)
+  {
+    XorWithIv(buf, Iv);
+    Cipher((state_t*)buf, ctx->RoundKey);
+    Iv = buf;
+    buf += AES_BLOCKLEN;
+  }
+  /* store Iv in ctx for next call */
+  memcpy(ctx->Iv, Iv, AES_BLOCKLEN);
+}
+
+void AES_CBC_decrypt_buffer(struct AES_ctx* ctx, uint8_t* buf, size_t length)
+{
+  size_t i;
+  uint8_t storeNextIv[AES_BLOCKLEN];
+  for (i = 0; i < length; i += AES_BLOCKLEN)
+  {
+    memcpy(storeNextIv, buf, AES_BLOCKLEN);
+    InvCipher((state_t*)buf, ctx->RoundKey);
+    XorWithIv(buf, ctx->Iv);
+    memcpy(ctx->Iv, storeNextIv, AES_BLOCKLEN);
+    buf += AES_BLOCKLEN;
+  }
+
+}
+
+#endif // #if defined(CBC) && (CBC == 1)
+
+
+
+#if defined(CTR) && (CTR == 1)
+
+/* Symmetrical operation: same function for encrypting as for decrypting. Note any IV/nonce should never be reused with the same key */
+void AES_CTR_xcrypt_buffer(struct AES_ctx* ctx, uint8_t* buf, size_t length)
+{
+  uint8_t buffer[AES_BLOCKLEN];
+  
+  size_t i;
+  int bi;
+  for (i = 0, bi = AES_BLOCKLEN; i < length; ++i, ++bi)
+  {
+    if (bi == AES_BLOCKLEN) /* we need to regen xor compliment in buffer */
+    {
+      
+      memcpy(buffer, ctx->Iv, AES_BLOCKLEN);
+      Cipher((state_t*)buffer,ctx->RoundKey);
+
+      /* Increment Iv and handle overflow */
+      for (bi = (AES_BLOCKLEN - 1); bi >= 0; --bi)
+      {
+	/* inc will overflow */
+        if (ctx->Iv[bi] == 255)
+	{
+          ctx->Iv[bi] = 0;
+          continue;
+        } 
+        ctx->Iv[bi] += 1;
+        break;   
+      }
+      bi = 0;
+    }
+
+    buf[i] = (buf[i] ^ buffer[bi]);
+  }
+}
+
+#endif // #if defined(CTR) && (CTR == 1)
