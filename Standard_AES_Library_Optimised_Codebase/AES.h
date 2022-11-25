@@ -1,5 +1,7 @@
 #ifndef __AES_H__
 #define __AES_H__
+
+/* 10/11/22, code modified by Vikram Vasudevan <vv50517@gmail.com> */
 /* **NOTE: This code is part of the standard AES Library. This code has been modified in the following aspects
 1. References to pgmspace has been removed as it is unnecessary for Arduino M0 pro (32-bit cortex ARM-M0+) or any ARM based environment
 2. References to program memory or flash has been removed and thus SRAM is the only memory being used, this has been done due to the intrinsic advantage that Arduino M0 pro has : 32kb RAM which is huge by AVR standards, this library has been originally designed for AVR systems and thus we modified these aspects and tried to use the resources offered by arduino M0 pro to the fullest.
