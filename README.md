@@ -4,7 +4,9 @@ I have implemented AEC algorithm and tested out the encryption and decryption pr
 
 Also, I have altered the standard AES library offered by arduino.cc and modified it to suit Arduino M0 pro or similar ARM environments, do have a look!
 
-References:
+References: 
+
+
 https://github.com/kokke/tiny-AES-c
 
 https://github.com/suculent/thinx-aes-lib
